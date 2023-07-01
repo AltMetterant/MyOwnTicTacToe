@@ -19,6 +19,7 @@ int maxDepth = 5;
 pii playerMove;
 bool bot2Bot = true;
 int botTurn = -1, playerTurn = 1, currTurn = 0;
+float waitTimeBetweenBotMove = 1.0f;
 
 /// Declearation
 void StartGame();
@@ -38,6 +39,8 @@ void CustomWait(int seconds);
 pii checkPos[5] = {{0, 1},{1, 0},{1, 1},{1, 2},{2, 1}};
 
 int main() {
+    // Random
+    srand(time(NULL));
 
     StartGame();
 
@@ -88,7 +91,7 @@ void StartGame() {
             next_move = BestMove(board, currTurn);
             board[next_move.x][next_move.y] = next_move.turn;
 
-            CustomWait(1);
+            CustomWait(waitTimeBetweenBotMove);
         }
 
         if (currTurn == playerTurn && bot2Bot == false) {
@@ -249,7 +252,7 @@ Move BestMove(int board[3][3], int turn) {
     int random_index = rand() % bestMoves.size();
     best_move = bestMoves[random_index];
 
-    //cout << "Number of best moves : " << bestMoves.size() << " and chose the " << random_index << " move";
+    cout << "\nNumber of best moves : " << bestMoves.size() << "\nAnd chose the " << random_index + 1<< "th move";
 
     return best_move;
 }
