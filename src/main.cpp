@@ -1,5 +1,4 @@
 #include <bits/stdc++.h>
-#include <conio.h>
 
 using namespace std;
 
@@ -9,6 +8,12 @@ struct Move{
     int x, y, turn;
 };
 
+struct EvaluatedMove {
+    Move _move;
+    int evaluation;
+};
+
+/// Variables
 int maxDepth = 5;
 
 pii playerMove;
@@ -25,6 +30,9 @@ void DisplayPos(int board[3][3]);
 bool IsMoveLeft(int board[3][3]);
 Move BestMove(int board[3][3], int turn);
 void PlayerInput(int board[3][3]);
+void GameCommand(string arg);
+
+void CustomWait(int seconds);
 
 // Center Position of center column and row
 pii checkPos[5] = {{0, 1},{1, 0},{1, 1},{1, 2},{2, 1}};
@@ -53,6 +61,7 @@ void StartGame() {
     // Game Init
     currTurn = 1;
     bool isStarted = false;
+    string gameResultMsg;
 
     // Pre-display
     DisplayPos(board);
@@ -61,18 +70,25 @@ void StartGame() {
 
     while (!(next_move.x == -1 && next_move.y == -1)) {
         // Checking if the game is over
-        if (CheckingWinner(board) == 0) {
-            if (!IsMoveLeft(board))
+        int evaluate = CheckingWinner(board);
+        if (evaluate == 0) {
+            if (!IsMoveLeft(board)) {
+                gameResultMsg = " --== TIE! ==--";
                 break;
+            }
         }
-        else break;
+        else {
+            gameResultMsg = (evaluate == 1) ? " --== CROSS WINS! ==--" : " --== NOUGHT WINS ==--";
+
+            break;
+        }
 
 
         if (botTurn == currTurn || bot2Bot == true) {
             next_move = BestMove(board, currTurn);
             board[next_move.x][next_move.y] = next_move.turn;
 
-            _sleep(1000);
+            CustomWait(1);
         }
 
         if (currTurn == playerTurn && bot2Bot == false) {
@@ -89,7 +105,9 @@ void StartGame() {
 
     // Game Ended
     system("cls");
-    cout << "\n ==== GAME ENDED ====";
+    cout << "\n ==== GAME ENDED ====\n";
+    cout << gameResultMsg;
+
     DisplayPos(board);
 
     if (!bot2Bot)
@@ -100,9 +118,7 @@ void StartGame() {
 
     getline(cin, inp);
 
-    if (inp == "rs") {
-        StartGame();
-    }
+    GameCommand(inp);
 }
 
 int Minimax(int board[3][3], int depth, bool isMax) {
@@ -168,6 +184,10 @@ int Minimax(int board[3][3], int depth, bool isMax) {
 Move BestMove(int board[3][3], int turn) {
 
     Move best_move = {-1, -1, turn};
+    Move chosen_move = best_move;
+
+    vector<EvaluatedMove> moves;
+    vector<Move> bestMoves;
 
     int bestVal;
 
@@ -187,11 +207,11 @@ Move BestMove(int board[3][3], int turn) {
                 board[i][j] = 0;
 
                 // Found best move
-                if (moveVal > bestVal) {
+                if (moveVal >= bestVal) {
                     bestVal = moveVal;
-                    best_move = {i, j, turn};
-                }
+                    moves.push_back({{i, j, turn}, moveVal});
 
+                }
             }
         }
     }
@@ -211,13 +231,26 @@ Move BestMove(int board[3][3], int turn) {
                 board[i][j] = 0;
 
                 // Found best move
-                if (moveVal < bestVal) {
+                if (moveVal <= bestVal) {
                     bestVal = moveVal;
-                    best_move = {i, j, turn};
+                    moves.push_back({{i, j, turn}, moveVal});
                 }
             }
         }
     }
+    // Get Best Moves
+    for (EvaluatedMove _move : moves) {
+        if (_move.evaluation == bestVal) {
+            bestMoves.push_back({_move._move});
+        }
+    }
+
+    // Get a Random move from Best Moves
+    int random_index = rand() % bestMoves.size();
+    best_move = bestMoves[random_index];
+
+    //cout << "Number of best moves : " << bestMoves.size() << " and chose the " << random_index << " move";
+
     return best_move;
 }
 
@@ -320,10 +353,24 @@ void PlayerInput(int board[3][3]) {
         board[playerMove.first][playerMove.second] != 0) {
 
         cout << "Your move wasn't valid!";
-        _sleep(500);
+        CustomWait(0.5f);
         system("cls");
         DisplayPos(board);
 
         PlayerInput(board);
     }
+}
+
+void GameCommand(string arg) {
+    if (arg == "close")
+        return;
+    if (arg == "rv b2b") {
+        bot2Bot = !bot2Bot;
+    }
+
+    StartGame();
+}
+
+void CustomWait(int seconds) {
+    std::this_thread::sleep_for(std::chrono::seconds(seconds));
 }
