@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <conio.h>
 
 using namespace std;
 
@@ -11,7 +12,7 @@ struct Move{
 int maxDepth = 5;
 
 pii playerMove;
-bool bot2Bot = false;
+bool bot2Bot = true;
 int botTurn = -1, playerTurn = 1, currTurn = 0;
 
 /// Declearation
@@ -23,7 +24,7 @@ int WinOrNah(int board[3][3], pii pos);
 void DisplayPos(int board[3][3]);
 bool IsMoveLeft(int board[3][3]);
 Move BestMove(int board[3][3], int turn);
-void PlayerInput();
+void PlayerInput(int board[3][3]);
 
 // Center Position of center column and row
 pii checkPos[5] = {{0, 1},{1, 0},{1, 1},{1, 2},{2, 1}};
@@ -41,6 +42,7 @@ int main() {
 // 1 : Cross
 // -1 : Nought
 void StartGame() {
+    system("cls");
 
     int board[3][3] ={{0, 0, 0},
                       {0, 0, 0},
@@ -70,22 +72,37 @@ void StartGame() {
             next_move = BestMove(board, currTurn);
             board[next_move.x][next_move.y] = next_move.turn;
 
-            // Switch Turn
+            _sleep(1000);
         }
 
         if (currTurn == playerTurn && bot2Bot == false) {
-            PlayerInput();
+            PlayerInput(board);
             board[playerMove.first][playerMove.second] = playerTurn;
 
         }
+        // Switch Turn
         currTurn *= -1;
 
+        system("cls");
         DisplayPos(board);
     }
 
     // Game Ended
-    cout << "\n\n==== GAME ENDED ====";
+    system("cls");
+    cout << "\n ==== GAME ENDED ====";
     DisplayPos(board);
+
+    if (!bot2Bot)
+        cin.ignore();
+    string inp;
+
+    cout << "\n> Command : ";
+
+    getline(cin, inp);
+
+    if (inp == "rs") {
+        StartGame();
+    }
 }
 
 int Minimax(int board[3][3], int depth, bool isMax) {
@@ -291,7 +308,22 @@ bool IsMoveLeft(int board[3][3]) {
     return false;
 }
 
-void PlayerInput() {
+void PlayerInput(int board[3][3]) {
     cout << "\n> Make your Move : ";
     cin >> playerMove.first >> playerMove.second;
+    // Value range: (1 - 3) (1 - 3)
+
+    playerMove.first--;
+    playerMove.second--;
+
+    if ((playerMove.first < 0 || playerMove.first > 2) || (playerMove.second < 0 || playerMove.second > 2) ||
+        board[playerMove.first][playerMove.second] != 0) {
+
+        cout << "Your move wasn't valid!";
+        _sleep(500);
+        system("cls");
+        DisplayPos(board);
+
+        PlayerInput(board);
+    }
 }
