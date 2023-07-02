@@ -1,4 +1,6 @@
 #include <bits/stdc++.h>
+#include "command.h"
+#include "keyholder.h"
 
 using namespace std;
 
@@ -11,38 +13,61 @@ struct Move{
 struct EvaluatedMove {
     Move _move;
     int evaluation;
+
+};
+/// > Variables
+// Game Settings
+map<string, bool> game_booleans = {
+    {"bot2Bot", true},
+};
+map<string, int> game_integers = {
+    {"botTurn", -1},
+    {"playerTurn", 1},
+    {"maxDepth", 5}
+};
+map<string, int> game_floats = {
+    {"betweenMoveDelaySecond", 1.0f},
+    {"invalidMoveDelaySecond", 0.5f}
 };
 
-/// Variables
-int maxDepth = 5;
+bool isStopped = false;
+
+// CommandValue enum
+mett_com::CommandValue comVal;
 
 pii playerMove;
-bool bot2Bot = true;
-int botTurn = -1, playerTurn = 1, currTurn = 0;
-float waitTimeBetweenBotMove = 1.0f;
+int currTurn = 0;
 
-/// Declearation
+/// > Declearation
+// Game Helper
+void PreGame();
 void StartGame();
+void DisplayPos(int board[3][3]);
+void PlayerInput(int board[3][3]);
+
+// Stuffs
+void CustomWait(int seconds);
+void GameCommand();
+void CommandHandler(vector<string> & args);
+
+// Game Mechanics
 int Minimax(int board[3][3], int depth, bool isMax);
 int CheckTurn(int board[3][3]);
 int CheckingWinner(int board[3][3]);
 int WinOrNah(int board[3][3], pii pos);
-void DisplayPos(int board[3][3]);
 bool IsMoveLeft(int board[3][3]);
 Move BestMove(int board[3][3], int turn);
-void PlayerInput(int board[3][3]);
-void GameCommand(string arg);
 
-void CustomWait(int seconds);
 
-// Center Position of center column and row
-pii checkPos[5] = {{0, 1},{1, 0},{1, 1},{1, 2},{2, 1}};
+// Center Position of center columns and rows
+const pii checkPos[5] = {{0, 1},{1, 0},{1, 1},{1, 2},{2, 1}};
 
 int main() {
     // Random
     srand(time(NULL));
 
-    StartGame();
+    GameCommand();
+    // Game Command (pre-game)
 
     return 0;
 }
@@ -87,16 +112,16 @@ void StartGame() {
         }
 
 
-        if (botTurn == currTurn || bot2Bot == true) {
+        if (game_integers[key_holder::botTurn] == currTurn || game_booleans[key_holder::bot2Bot] == true) {
             next_move = BestMove(board, currTurn);
             board[next_move.x][next_move.y] = next_move.turn;
 
-            CustomWait(waitTimeBetweenBotMove);
+            CustomWait(game_floats[key_holder::betweenMoveDelaySecond]);
         }
 
-        if (currTurn == playerTurn && bot2Bot == false) {
+        if (currTurn == game_integers[key_holder::playerTurn] && game_booleans[key_holder::bot2Bot] == false) {
             PlayerInput(board);
-            board[playerMove.first][playerMove.second] = playerTurn;
+            board[playerMove.first][playerMove.second] = game_integers[key_holder::playerTurn];
 
         }
         // Switch Turn
@@ -113,15 +138,10 @@ void StartGame() {
 
     DisplayPos(board);
 
-    if (!bot2Bot)
+    if (!game_booleans[key_holder::bot2Bot])
         cin.ignore();
-    string inp;
 
-    cout << "\n> Command : ";
-
-    getline(cin, inp);
-
-    GameCommand(inp);
+    GameCommand();
 }
 
 int Minimax(int board[3][3], int depth, bool isMax) {
@@ -252,7 +272,8 @@ Move BestMove(int board[3][3], int turn) {
     int random_index = rand() % bestMoves.size();
     best_move = bestMoves[random_index];
 
-    cout << "\nNumber of best moves : " << bestMoves.size() << "\nAnd chose the " << random_index + 1<< "th move";
+    //cout << "\nBest move value : " << bestVal;
+    //cout << "\nNumber of best moves : " << bestMoves.size() << "\nAnd chose the " << random_index + 1<< "th move";
 
     return best_move;
 }
@@ -347,8 +368,9 @@ bool IsMoveLeft(int board[3][3]) {
 void PlayerInput(int board[3][3]) {
     cout << "\n> Make your Move : ";
     cin >> playerMove.first >> playerMove.second;
-    // Value range: (1 - 3) (1 - 3)
 
+    // Value range: (1 - 3) (1 - 3)
+    // Decrement values by 1
     playerMove.first--;
     playerMove.second--;
 
@@ -356,7 +378,7 @@ void PlayerInput(int board[3][3]) {
         board[playerMove.first][playerMove.second] != 0) {
 
         cout << "Your move wasn't valid!";
-        CustomWait(0.5f);
+        CustomWait(game_floats[key_holder::betweenMoveDelaySecond]);
         system("cls");
         DisplayPos(board);
 
@@ -364,16 +386,60 @@ void PlayerInput(int board[3][3]) {
     }
 }
 
-void GameCommand(string arg) {
-    if (arg == "close")
-        return;
-    if (arg == "rv b2b") {
-        bot2Bot = !bot2Bot;
+void GameCommand() {
+    string inp, arg;
+    vector<string> args;
+
+    cout << '\n';
+    cout << " > Command : ";
+
+    getline(cin, inp);
+
+    if (inp.size() != 0) {
+         // Spliting the string into words
+        stringstream str_stream(inp);
+        while (str_stream >> arg) {
+            args.push_back(arg);
+        } 
+
+        CommandHandler(args);
     }
 
-    StartGame();
+    if (!isStopped)
+        StartGame();
 }
+
+void CommandHandler(vector<string> & args) {
+
+    switch(mett_com::commandValues[args[0]]) {
+        case mett_com::close : {
+            isStopped = true;
+            cout << " **> Game Stopped";
+            break;
+        }
+        case mett_com::set : {
+            mett_com::Set(args, game_booleans);
+            cout << game_booleans[key_holder::bot2Bot];
+
+            break;
+        }
+        case mett_com::swturn : {
+            mett_com::SwitchTurn(args, game_integers[key_holder::playerTurn], game_integers[key_holder::botTurn]);
+        }
+        default: {
+            break;
+        }
+    } 
+}
+
 
 void CustomWait(int seconds) {
     std::this_thread::sleep_for(std::chrono::seconds(seconds));
+}
+
+void PreGame() {
+    cout << " ====< GAME SETUPS >====\n";
+    cout << " > Current Bot2Bot mode : " << (game_booleans[key_holder::bot2Bot] ? "true" : "false") << '\n';
+
+    cout << "";
 }
