@@ -19,6 +19,7 @@ struct EvaluatedMove {
 // Game Settings
 map<string, bool> game_booleans = {
     {"bot2Bot", true},
+    {"showMoveInfo", false},
 };
 map<string, int> game_integers = {
     {"botTurn", -1},
@@ -31,9 +32,6 @@ map<string, int> game_floats = {
 };
 
 bool isStopped = false;
-
-// CommandValue enum
-mett_com::CommandValue comVal;
 
 pii playerMove;
 int currTurn = 0;
@@ -66,8 +64,10 @@ int main() {
     // Random
     srand(time(NULL));
 
-    GameCommand();
     // Game Command (pre-game)
+    PreGame();
+
+    GameCommand();
 
     return 0;
 }
@@ -272,8 +272,10 @@ Move BestMove(int board[3][3], int turn) {
     int random_index = rand() % bestMoves.size();
     best_move = bestMoves[random_index];
 
-    //cout << "\nBest move value : " << bestVal;
-    //cout << "\nNumber of best moves : " << bestMoves.size() << "\nAnd chose the " << random_index + 1<< "th move";
+    if (game_booleans[key_holder::showMoveInfo]) {
+    cout << "\nBest move value : " << bestVal;
+    cout << "\nNumber of best moves : " << bestMoves.size() << "\nAnd chose the " << random_index + 1<< "th move";
+    }
 
     return best_move;
 }
@@ -440,6 +442,10 @@ void CustomWait(int seconds) {
 void PreGame() {
     cout << " ====< GAME SETUPS >====\n";
     cout << " > Current Bot2Bot mode : " << (game_booleans[key_holder::bot2Bot] ? "true" : "false") << '\n';
+    cout << " > Player Move : " << ((game_integers[key_holder::playerTurn] == 1) ? "X" : "O") << '\n';
+    cout << " > Bot Move : " << ((game_integers[key_holder::botTurn] == 1) ? "X" : "O") << '\n';
 
-    cout << "";
+    cout << "\n -?- Move Format : <row:integer[1 - 3]> <column:integer[1 - 3]>"; 
+
+    cout << "\n\n -?- Leave command blank to start the Game!\n";
 }

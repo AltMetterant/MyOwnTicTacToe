@@ -13,6 +13,7 @@ namespace key_holder {
     static string botTurn = "botTurn";
     static string playerTurn = "playerTurn";
     static string maxDepth = "maxDepth";
+    static string showMoveInfo = "showMoveInfo";
 
     // Game integers
     static string betweenMoveDelaySecond = "betweenMoveDelaySecond";
@@ -24,7 +25,9 @@ namespace key_holder {
     static map<string, string> bool_names = {
         {"b2b", bot2Bot},
         {"bot2bot", bot2Bot},
-        {"bot2Bot", bot2Bot}
+        {"bot2Bot", bot2Bot},
+        {"showMoveInfo", showMoveInfo},
+        {"smi", showMoveInfo}
     };
 
 }
