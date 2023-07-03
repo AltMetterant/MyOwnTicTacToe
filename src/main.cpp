@@ -17,16 +17,17 @@ struct EvaluatedMove {
 };
 /// > Variables
 // Game Settings
-map<string, bool> game_booleans = {
+map<string, bool> gameBooleans = {
     {"bot2Bot", true},
     {"showMoveInfo", false},
+    {"resetBoard", false},
 };
-map<string, int> game_integers = {
+map<string, int> gameIntegers = {
     {"botTurn", -1},
     {"playerTurn", 1},
     {"maxDepth", 5}
 };
-map<string, int> game_floats = {
+map<string, int> gameFloats = {
     {"betweenMoveDelaySecond", 1.0f},
     {"invalidMoveDelaySecond", 0.5f}
 };
@@ -35,6 +36,7 @@ bool isStopped = false;
 
 pii playerMove;
 int currTurn = 0;
+vector<int> temp_board(9, 0);
 
 /// > Declearation
 // Game Helper
@@ -80,16 +82,27 @@ int main() {
 void StartGame() {
     system("cls");
 
-    int board[3][3] ={{0, 0, 0},
-                      {0, 0, 0},
-                      {0, 0, 0}};
-
-    memset(board, 0, sizeof board);
+    int board[3][3];
 
     // Game Init
     currTurn = 1;
+
     bool isStarted = false;
     string gameResultMsg;
+
+    // Setup board
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (temp_board.size() < 9)
+                break;
+            board[i][j] = temp_board.at(i * 3 + j);
+        }
+    }
+
+    if (gameBooleans[key_holder::resetBoard]) {
+        temp_board.resize(9, 0);
+        memset(board, 0, sizeof board);
+    }
 
     // Pre-display
     DisplayPos(board);
@@ -112,16 +125,16 @@ void StartGame() {
         }
 
 
-        if (game_integers[key_holder::botTurn] == currTurn || game_booleans[key_holder::bot2Bot] == true) {
+        if (gameIntegers[key_holder::botTurn] == currTurn || gameBooleans[key_holder::bot2Bot] == true) {
             next_move = BestMove(board, currTurn);
             board[next_move.x][next_move.y] = next_move.turn;
 
-            CustomWait(game_floats[key_holder::betweenMoveDelaySecond]);
+            CustomWait(gameFloats[key_holder::betweenMoveDelaySecond]);
         }
 
-        if (currTurn == game_integers[key_holder::playerTurn] && game_booleans[key_holder::bot2Bot] == false) {
+        if (currTurn == gameIntegers[key_holder::playerTurn] && gameBooleans[key_holder::bot2Bot] == false) {
             PlayerInput(board);
-            board[playerMove.first][playerMove.second] = game_integers[key_holder::playerTurn];
+            board[playerMove.first][playerMove.second] = gameIntegers[key_holder::playerTurn];
 
         }
         // Switch Turn
@@ -138,7 +151,7 @@ void StartGame() {
 
     DisplayPos(board);
 
-    if (!game_booleans[key_holder::bot2Bot])
+    if (!gameBooleans[key_holder::bot2Bot])
         cin.ignore();
 
     GameCommand();
@@ -272,9 +285,9 @@ Move BestMove(int board[3][3], int turn) {
     int random_index = rand() % bestMoves.size();
     best_move = bestMoves[random_index];
 
-    if (game_booleans[key_holder::showMoveInfo]) {
-    cout << "\nBest move value : " << bestVal;
-    cout << "\nNumber of best moves : " << bestMoves.size() << "\nAnd chose the " << random_index + 1<< "th move";
+    if (gameBooleans[key_holder::showMoveInfo]) {
+        cout << "\nBest move value : " << bestVal;
+        cout << "\nNumber of best moves : " << bestMoves.size() << "\nAnd chose the " << random_index + 1<< "th move";
     }
 
     return best_move;
@@ -380,7 +393,7 @@ void PlayerInput(int board[3][3]) {
         board[playerMove.first][playerMove.second] != 0) {
 
         cout << "Your move wasn't valid!";
-        CustomWait(game_floats[key_holder::betweenMoveDelaySecond]);
+        CustomWait(gameFloats[key_holder::betweenMoveDelaySecond]);
         system("cls");
         DisplayPos(board);
 
@@ -391,14 +404,19 @@ void PlayerInput(int board[3][3]) {
 void GameCommand() {
     string inp, arg;
     vector<string> args;
+    bool hasChar = false;
 
     cout << '\n';
     cout << " > Command : ";
 
     getline(cin, inp);
+    for (int i = 0; i < inp.size(); i++) {
+        if (inp[i] != ' ')
+            hasChar = true;
+    }
 
-    if (inp.size() != 0) {
-         // Spliting the string into words
+    if (inp.size() != 0 && hasChar) {
+        // Spliting the string into words
         stringstream str_stream(inp);
         while (str_stream >> arg) {
             args.push_back(arg);
@@ -416,22 +434,38 @@ void CommandHandler(vector<string> & args) {
     switch(mett_com::commandValues[args[0]]) {
         case mett_com::close : {
             isStopped = true;
-            cout << " **> Game Stopped";
+            cout << mett_com::cmdLogPrefix <<"Game Stopped";
+
+            return;
             break;
         }
-        case mett_com::set : {
-            mett_com::Set(args, game_booleans);
-            cout << game_booleans[key_holder::bot2Bot];
+        case mett_com::help : {
+            mett_com::Help(args);
+            break;
+        }
 
+        case mett_com::setrule : {
+            mett_com::SetRule(args, gameBooleans);
             break;
         }
         case mett_com::swturn : {
-            mett_com::SwitchTurn(args, game_integers[key_holder::playerTurn], game_integers[key_holder::botTurn]);
+            mett_com::SwitchTurn(args, gameIntegers[key_holder::playerTurn], gameIntegers[key_holder::botTurn]);
+            break;
         }
+        case mett_com::ch_board : {
+            temp_board = mett_com::ChangeBoard(args);
+
+            break;
+        }
+
         default: {
             break;
         }
     } 
+    cout << '\n';
+
+    // Recursive
+    GameCommand();
 }
 
 
@@ -441,9 +475,10 @@ void CustomWait(int seconds) {
 
 void PreGame() {
     cout << " ====< GAME SETUPS >====\n";
-    cout << " > Current Bot2Bot mode : " << (game_booleans[key_holder::bot2Bot] ? "true" : "false") << '\n';
-    cout << " > Player Move : " << ((game_integers[key_holder::playerTurn] == 1) ? "X" : "O") << '\n';
-    cout << " > Bot Move : " << ((game_integers[key_holder::botTurn] == 1) ? "X" : "O") << '\n';
+    cout << " > Current Bot2Bot mode : " << (gameBooleans[key_holder::bot2Bot] ? "true" : "false") << '\n';
+    cout << " > Player Move : " << ((gameIntegers[key_holder::playerTurn] == 1) ? "X" : "O") << '\n';
+    cout << " > Bot Move : " << ((gameIntegers[key_holder::botTurn] == 1) ? "X" : "O") << '\n';
+    cout << " > Reset Preset Board : " << (gameBooleans[key_holder::resetBoard] ? "true" : "false") << '\n';
 
     cout << "\n -?- Move Format : <row:integer[1 - 3]> <column:integer[1 - 3]>"; 
 
